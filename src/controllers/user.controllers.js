@@ -18,14 +18,15 @@ const registerUser = asyncHandler(async (req,res)=>{
 
    //get user details from frontend
    const {username,fullName,email,password}=req.body
+   console.log(username,fullName,email,password);
 
    //validation - not empty
-   if([fullName,email,username,password].some((field)=>{field?.trim()===""})){
+   if([fullName,email,username,password].some((field)=>field?.trim()==="")){
         throw new ApiError(400,"All field are required")
    }
 
    //check is user already exist : username , email
-   const existedUser= User.findOne({
+   const existedUser=await User.findOne({
       $or: [{username},{email}]
    })
 
@@ -34,26 +35,32 @@ const registerUser = asyncHandler(async (req,res)=>{
    }
 
    //check for image, check for avatar
-   const avataLocalPath=req.files?.avatar[0]?.path;
-   const coverImageLocalPath=req.files?.coverImage[0]?.path;
+   const avatarLocalPath=req.files?.avatar[0]?.path;
+   // const coverImageLocalPath=req.files?.coverImage[0]?.path;
 
-   if(!avataLocalPath){
+   let coverImageLocalPath;
+   if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length>0){
+      coverImageLocalPath=req.files.coverImage[0].path
+   }
+
+   if(!avatarLocalPath){
       throw new ApiError(400,"Avatar files are required")
    }
 
    //upload them to cloudinary , avatar
-   const avatar=await uploadOnCloudinary(avataLocalPath)
-   const converImage=await uploadOnCloudinary(coverImageLocalPath)
+   const avatar=await uploadOnCloudinary(avatarLocalPath)
+   const coverImage=await uploadOnCloudinary(coverImageLocalPath)
 
    if(!avatar){
       throw new ApiError(400,"Avatar files are required")
    }
 
+   
    //create user object - create entry in db
    const user=await User.create({
       fullName,
       avatar:avatar.url,
-      converImage:converImage?.url || "",
+      coverImage:coverImage?.url || "",
       email,
       password,
       username:username.toLowerCase()
