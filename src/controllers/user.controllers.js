@@ -192,7 +192,7 @@ const refreshAccessToken=asyncHandler(async (req,res)=>{
    }
 
    try {
-      const decodedToken=jwt.verify(refreshAccessToken,REFRESH_TOKEN_SECRET)
+      const decodedToken=jwt.verify(incomingRefreshToken,process.env.REFRESH_TOKEN_SECRET)
    
       const user=await User.findById(decodedToken?._id)
    
@@ -209,16 +209,16 @@ const refreshAccessToken=asyncHandler(async (req,res)=>{
          secure:true
       }
    
-      const {newrefreshToken,accessToken}=await generateAccessAndRefereshTokens(user._id)
+      const {accessToken,refreshToken}=await generateAccessAndRefereshTokens(user._id)
    
       return res
                 .status(200)
                 .cookie("accessToken",accessToken,options)
-                .cookie("refreshToken",newrefreshToken,options)
+                .cookie("refreshToken",refreshToken,options)
                 .json(
                   new ApiResponse(
                      200,
-                     {accessToken,refreshToken:newrefreshToken},
+                     {accessToken,refreshToken:refreshToken},
                      "Access token refreshed"
                   )
                 )
